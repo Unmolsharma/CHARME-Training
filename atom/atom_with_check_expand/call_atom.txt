@@ -1,0 +1,83 @@
+def call_atom(self, P, topo_row, topo_column, seed_limit, is_beginning, curr_node = None, embedding = None):
+    #P: current logical graph (which was intially target logical graph, but some edges are removed)
+    #topo_row: row size of current embedding
+    #topo_column: column size of current embedding
+    #seed_limit: a random number
+    #is_beginning: indicate mode of ATOM
+    #curr_node: chosen node to be embedded
+    #embedding: current embedding which is a list of mapping in form of (x,y,z,logical_node)
+    command = [ './ours/atom_system']
+    n = len(P.nodes)
+    m = len(P.edges)
+    command.append(str(n))
+    command.append(str(m))
+
+    for ed in P.edges:
+        command.append(str(ed[0]))
+        command.append(str(ed[1]))
+
+    command.append(str(topo_row))
+    command.append(str(topo_column))
+    command.append(str(seed_limit))
+    command.append(str(is_beginning))
+
+    old_node = []
+    if is_beginning == 1:
+        command.append(str(curr_node))
+
+        check = [False]*n
+        for emb in embedding:
+            check[emb[3]] = True
+
+        old_node = []
+        for node in P.neighbors(curr_node):
+            if check[node]:
+                old_node.append(node)
+
+        old_len = len(old_node)
+        #print(old_node)
+        command.append(str(old_len))
+        for node in old_node:
+            command.append(str(node))
+
+        emb_len = len(embedding)
+        command.append(str(emb_len))
+        for emb in embedding:
+            command.append(str(emb[0]))
+            command.append(str(emb[1]))
+            command.append(str(emb[2]))
+            command.append(str(emb[3]))
+
+    #print(command)
+    command_s = ''
+    for i in command:
+        command_s = command_s + i +' '
+    command_s = command_s + atom_file
+    os.system(command_s)
+    #res = subprocess.check_output(command).decode().split(' ')
+    #print(res)
+
+    new_embedding = []
+    f = open(atom_file, "r")
+    rr = -1
+    cc = -1
+    while (True):
+        line = f.readline()
+        line_arr = line[:-1].split(' ')
+        if len(line) == 0:
+            break
+        if len(line_arr) == 4:
+            new_embedding.append((int(line_arr[0]),int(line_arr[1]),int(line_arr[2]),int(line_arr[3])))
+        elif len(line_arr) == 2:
+            rr = int(line_arr[0])
+            cc = int(line_arr[1])
+        else:
+            check_expand = int(line_arr[0])
+    if check_expand == 1:
+        print('Topology expanded')
+    #for idx in range(0, len(res) - 2, 4):
+    #    new_embedding.append((int(res[idx]),int(res[idx+1]),int(res[idx+2]),int(res[idx+3])))
+    #rr = res[len(res) - 2]
+    #cc = res[len(res) - 1]
+    f.close()
+    return new_embedding, rr, cc, old_node
